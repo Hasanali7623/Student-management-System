@@ -1,0 +1,198 @@
+<div class="dashboard-container">
+  <nav class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <i class="icon">🎓</i>
+        <h2>Student Portal</h2>
+      </div>
+      <div class="user-info">
+        <div class="avatar">{{ (student?.name || 'S').charAt(0).toUpperCase() }}</div>
+        <div class="user-details">
+          <span class="user-name">{{ student?.name || 'Student' }}</span>
+          <span class="user-role">Student</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="sidebar-menu">
+      <a routerLink="/dashboard" class="menu-item active">
+        <i class="icon">🏠</i>
+        <span>Dashboard</span>
+      </a>
+      <a routerLink="/complaints" class="menu-item">
+        <i class="icon">📝</i>
+        <span>Complaints</span>
+      </a>
+      <button (click)="toggleTheme()" class="menu-item theme-toggle">
+        <i class="icon">{{ isDarkMode ? '☀️' : '🌙' }}</i>
+        <span>{{ isDarkMode ? 'Light Mode' : 'Dark Mode' }}</span>
+      </button>
+      <button (click)="logout()" class="menu-item logout-btn">
+        <i class="icon">🚪</i>
+        <span>Logout</span>
+      </button>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <header class="dashboard-header">
+      <div class="welcome-section">
+        <h1>{{ currentGreeting }}, {{ student?.name || 'Student' }}! 👋</h1>
+        <p>{{ getTimeOfDay() }} vibes - Here's what's happening with your account</p>
+      </div>
+      <div class="header-controls">
+        <button (click)="toggleTheme()" class="theme-toggle-btn" title="Toggle theme">
+          <i class="icon">{{ isDarkMode ? '☀️' : '🌙' }}</i>
+        </button>
+        <div class="enhanced-time-display">
+          <div class="time-icon">{{ getTimeIcon() }}</div>
+          <div class="time-content">
+            <div class="current-time">{{ getFormattedTime() }}</div>
+            <div class="current-date">{{ getRelativeTime() }}</div>
+            <div class="time-zone">{{ currentTime.toLocaleTimeString('en-US', { timeZoneName: 'short' }).split(' ')[2] }}</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div *ngIf="loading" class="loading-container">
+      <div class="loading"></div>
+      <p>Loading dashboard...</p>
+    </div>
+
+    <div *ngIf="error && !loading" class="error-container">
+      <p>{{ error }}</p>
+      <button (click)="loadDashboardData()" class="btn btn-primary">Try Again</button>
+    </div>
+
+    <div *ngIf="!loading && !error" class="dashboard-content">
+      <!-- Stats Overview -->
+      <div class="stats-row">
+        <div class="stat-card total-complaints">
+          <div class="stat-icon">📊</div>
+          <div class="stat-content">
+            <div class="stat-number">{{ complaintsSummary?.total || 0 }}</div>
+            <div class="stat-label">Total Complaints</div>
+          </div>
+        </div>
+        
+        <div class="stat-card pending-complaints">
+          <div class="stat-icon">⏳</div>
+          <div class="stat-content">
+            <div class="stat-number">{{ complaintsSummary?.pending || 0 }}</div>
+            <div class="stat-label">Pending</div>
+          </div>
+        </div>
+        
+        <div class="stat-card in-progress-complaints">
+          <div class="stat-icon">🔄</div>
+          <div class="stat-content">
+            <div class="stat-number">{{ complaintsSummary?.inProgress || 0 }}</div>
+            <div class="stat-label">In Progress</div>
+          </div>
+        </div>
+        
+        <div class="stat-card resolved-complaints">
+          <div class="stat-icon">✅</div>
+          <div class="stat-content">
+            <div class="stat-number">{{ complaintsSummary?.resolved || 0 }}</div>
+            <div class="stat-label">Resolved</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="glass-card quick-actions-card">
+        <div class="card-header">
+          <div class="header-content">
+            <h3>🚀 Quick Actions</h3>
+            <p>Common tasks you might want to perform</p>
+          </div>
+        </div>
+        <div class="actions-grid">
+          <button (click)="navigateToComplaints()" class="action-card new-complaint">
+            <div class="action-icon">➕</div>
+            <div class="action-content">
+              <h4>Submit Complaint</h4>
+              <p>Report a new issue or concern</p>
+            </div>
+          </button>
+          <button (click)="navigateToComplaints()" class="action-card view-complaints">
+            <div class="action-icon">📋</div>
+            <div class="action-content">
+              <h4>View Complaints</h4>
+              <p>Check your complaint history</p>
+            </div>
+          </button>
+          <button class="action-card help-support">
+            <div class="action-icon">❓</div>
+            <div class="action-content">
+              <h4>Help & Support</h4>
+              <p>Get assistance and guidelines</p>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Recent Activity -->
+      <div class="glass-card recent-activity">
+        <div class="card-header">
+          <div class="header-content">
+            <h3>📈 Recent Activity</h3>
+            <p>Your latest complaints and updates</p>
+          </div>
+          <button 
+            (click)="navigateToComplaints()" 
+            class="btn btn-primary btn-sm view-all-btn"
+            title="Go to complaints page"
+          >
+            <i class="icon">📋</i>
+            View All
+          </button>
+        </div>
+        
+        <!-- Show recent complaints if available -->
+        <div class="activity-content" *ngIf="recentComplaints.length > 0; else noActivityTemplate">
+          <div class="activity-timeline">
+            <div *ngFor="let complaint of recentComplaints; trackBy: trackByComplaintId" class="activity-item">
+              <div class="activity-timeline-dot" [class]="getStatusClass(complaint.status)">
+                {{ getStatusIcon(complaint.status) }}
+              </div>
+              <div class="activity-card">
+                <div class="activity-header">
+                  <div class="activity-title">
+                    <span class="activity-category">{{ getCategoryIcon(complaint.category) }} {{ complaint.category | titlecase }}</span>
+                    <span class="activity-priority" [class]="getPriorityClass(complaint.priority)">
+                      {{ getPriorityIcon(complaint.priority) }} {{ complaint.priority | titlecase }}
+                    </span>
+                  </div>
+                  <span class="activity-time">{{ formatTimeAgo(complaint.created_at) }}</span>
+                </div>
+                <h4 class="complaint-title">{{ complaint.title }}</h4>
+                <p class="complaint-description">{{ complaint.description | slice:0:80 }}{{ complaint.description.length > 80 ? '...' : '' }}</p>
+                <div class="activity-footer">
+                  <span class="status-badge" [class]="getStatusClass(complaint.status)">
+                    {{ complaint.status }}
+                  </span>
+                  <span class="complaint-id">#{{ complaint.id }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty state template -->
+        <ng-template #noActivityTemplate>
+          <div class="activity-empty">
+            <div class="empty-icon">📝</div>
+            <h4>No recent activity</h4>
+            <p>Submit your first complaint to see activity here</p>
+            <button (click)="navigateToComplaints()" class="btn btn-primary btn-sm">
+              Submit Complaint
+            </button>
+          </div>
+        </ng-template>
+      </div>
+    </div>
+  </main>
+</div>

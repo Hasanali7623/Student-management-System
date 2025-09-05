@@ -1,0 +1,225 @@
+<div class="dashboard-container">
+  <nav class="sidebar">
+    <div class="sidebar-header">
+      <h2>Student Portal</h2>
+    </div>
+    
+    <div class="sidebar-menu">
+      <a routerLink="/dashboard" class="menu-item">
+        <i class="icon">🏠</i>
+        <span>Dashboard</span>
+      </a>
+      <a routerLink="/complaints" class="menu-item active">
+        <i class="icon">📝</i>
+        <span>Complaints</span>
+      </a>
+      <button (click)="toggleTheme()" class="menu-item theme-toggle">
+        <i class="icon">{{ isDarkMode ? '☀️' : '🌙' }}</i>
+        <span>{{ isDarkMode ? 'Light Mode' : 'Dark Mode' }}</span>
+      </button>
+      <button (click)="logout()" class="menu-item logout-btn">
+        <i class="icon">🚪</i>
+        <span>Logout</span>
+      </button>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <header class="page-header">
+      <div class="header-content">
+        <h1>{{ editMode ? 'Edit Complaint' : 'My Complaints' }}</h1>
+        <p>{{ editMode ? 'Update your complaint details' : 'Manage and track your submitted complaints' }}</p>
+      </div>
+      <button (click)="toggleForm()" class="btn btn-primary" *ngIf="!editMode">
+        <span *ngIf="!showForm">➕ New Complaint</span>
+        <span *ngIf="showForm">❌ Cancel</span>
+      </button>
+      <button (click)="resetForm(); showForm = false" class="btn btn-secondary" *ngIf="editMode">
+        ❌ Cancel Edit
+      </button>
+    </header>
+
+    <!-- Success Message -->
+    <div *ngIf="successMessage" class="success-message global-success">
+      {{ successMessage }}
+    </div>
+
+    <!-- Error Message -->
+    <div *ngIf="error" class="error-message global-error">
+      {{ error }}
+    </div>
+
+    <!-- New Complaint Form -->
+    <div *ngIf="showForm" class="glass-card complaint-form-card">
+      <h3>Submit New Complaint</h3>
+      <form [formGroup]="complaintForm" (ngSubmit)="onSubmit()" class="complaint-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="title" class="form-label">Complaint Title</label>
+            <input
+              type="text"
+              id="title"
+              formControlName="title"
+              class="form-input"
+              placeholder="Brief description of the issue"
+              [class.error]="title?.invalid && title?.touched"
+            />
+            <div *ngIf="title?.invalid && title?.touched" class="error-message">
+              <span *ngIf="title?.errors?.['required']">Title is required</span>
+              <span *ngIf="title?.errors?.['minlength']">Title must be at least 3 characters</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="category" class="form-label">Category</label>
+            <select
+              id="category"
+              formControlName="category"
+              class="form-select"
+              [class.error]="category?.invalid && category?.touched"
+            >
+              <option value="">Select a category</option>
+              <option *ngFor="let cat of categories" [value]="cat.value">{{ cat.label }}</option>
+            </select>
+            <div *ngIf="category?.invalid && category?.touched" class="error-message">
+              <span *ngIf="category?.errors?.['required']">Category is required</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="priority" class="form-label">Priority Level</label>
+            <select
+              id="priority"
+              formControlName="priority"
+              class="form-select"
+              [class.error]="priority?.invalid && priority?.touched"
+            >
+              <option *ngFor="let p of priorities" [value]="p.value">
+                {{ p.label }}
+              </option>
+            </select>
+            <div *ngIf="priority?.invalid && priority?.touched" class="error-message">
+              <span *ngIf="priority?.errors?.['required']">Priority is required</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="description" class="form-label">Detailed Description</label>
+          <textarea
+            id="description"
+            formControlName="description"
+            class="form-textarea"
+            placeholder="Provide a detailed description of your complaint..."
+            [class.error]="description?.invalid && description?.touched"
+          ></textarea>
+          <div *ngIf="description?.invalid && description?.touched" class="error-message">
+            <span *ngIf="description?.errors?.['required']">Description is required</span>
+            <span *ngIf="description?.errors?.['minlength']">Description must be at least 10 characters</span>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" (click)="resetForm(); showForm = false" class="btn btn-secondary">Cancel</button>
+          <button
+            type="submit"
+            [disabled]="submitting || complaintForm.invalid"
+            class="btn btn-primary"
+          >
+            <span *ngIf="submitting" class="loading"></span>
+            <span *ngIf="!submitting && !editMode">Submit Complaint</span>
+            <span *ngIf="!submitting && editMode">Update Complaint</span>
+            <span *ngIf="submitting && !editMode">Submitting...</span>
+            <span *ngIf="submitting && editMode">Updating...</span>
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Complaints List -->
+    <div class="complaints-section">
+      <div *ngIf="loading" class="loading-container">
+        <div class="loading"></div>
+        <p>Loading complaints...</p>
+      </div>
+
+      <div *ngIf="!loading && complaints.length === 0" class="empty-state">
+        <div class="empty-icon">📝</div>
+        <h3>No complaints yet</h3>
+        <p>You haven't submitted any complaints. Click "New Complaint" to get started.</p>
+        <button (click)="toggleForm()" class="btn btn-primary">Submit Your First Complaint</button>
+      </div>
+
+      <div *ngIf="!loading && complaints.length > 0" class="complaints-grid">
+        <div *ngFor="let complaint of complaints" class="glass-card complaint-card">
+          <div class="complaint-header">
+            <h4>{{ complaint.title }}</h4>
+            <div class="header-badges">
+              <span class="priority-badge" [class]="getPriorityClass(complaint.priority || 'medium')">
+                {{ getPriorityIcon(complaint.priority || 'medium') }} {{ (complaint.priority || 'medium') | titlecase }}
+              </span>
+              <span class="status-badge" [class]="getStatusClass(complaint.status)">
+                {{ complaint.status }}
+              </span>
+            </div>
+          </div>
+          
+          <div class="complaint-meta">
+            <span class="category">{{ complaint.category | titlecase }}</span>
+            <span class="date">{{ formatDate(complaint.created_at) }}</span>
+          </div>
+          
+          <div class="complaint-description">
+            <p>{{ complaint.description }}</p>
+          </div>
+          
+          <div class="complaint-actions">
+            <button
+              (click)="updateStatus(complaint.id, 'Pending')"
+              class="btn btn-pending btn-sm"
+              [disabled]="isStatusPending(complaint.status)"
+              title="Mark as Pending"
+              *ngIf="complaint.status !== 'Pending'"
+            >
+              ⏳ Pending
+            </button>
+            <button
+              (click)="updateStatus(complaint.id, 'In Progress')"
+              class="btn btn-warning btn-sm"
+              [disabled]="complaint.status !== 'Pending'"
+              title="Mark as In Progress"
+              *ngIf="complaint.status === 'Pending'"
+            >
+              🔄 In Progress
+            </button>
+            <button
+              (click)="updateStatus(complaint.id, 'Resolved')"
+              class="btn btn-success btn-sm"
+              [disabled]="isStatusResolved(complaint.status)"
+              title="Mark as Resolved"
+              *ngIf="complaint.status !== 'Resolved'"
+            >
+              ✅ Resolved
+            </button>
+            <button
+              (click)="editComplaint(complaint)"
+              class="btn btn-secondary btn-sm"
+              [disabled]="isStatusResolved(complaint.status)"
+              title="Edit complaint"
+            >
+              ✏️ Edit
+            </button>
+            <button
+              (click)="deleteComplaint(complaint.id)"
+              class="btn btn-danger btn-sm"
+              [disabled]="isStatusResolved(complaint.status)"
+              title="Delete complaint"
+            >
+              🗑️ Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>

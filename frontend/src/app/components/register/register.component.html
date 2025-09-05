@@ -1,0 +1,134 @@
+<div class="auth-container">
+  <div class="auth-wrapper">
+    <div class="glass-container auth-card">
+      <div class="auth-header">
+        <h1>Create Account</h1>
+        <p>Join our student management system</p>
+      </div>
+
+      <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="auth-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="student_id" class="form-label">Student ID</label>
+            <input
+              type="text"
+              id="student_id"
+              formControlName="student_id"
+              class="form-input"
+              placeholder="e.g., CS001, IT123"
+              [class.error]="student_id?.invalid && student_id?.touched"
+            />
+            <div *ngIf="student_id?.invalid && student_id?.touched" class="error-message">
+              <span *ngIf="student_id?.errors?.['required']">Student ID is required</span>
+              <span *ngIf="student_id?.errors?.['pattern']">Format: 2-3 letters followed by 3-4 numbers (e.g., CS001)</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="name" class="form-label">Full Name</label>
+            <input
+              type="text"
+              id="name"
+              formControlName="name"
+              class="form-input"
+              placeholder="Enter your full name"
+              [class.error]="name?.invalid && name?.touched"
+            />
+            <div *ngIf="name?.invalid && name?.touched" class="error-message">
+              <span *ngIf="name?.errors?.['required']">Name is required</span>
+              <span *ngIf="name?.errors?.['minlength']">Name must be at least 2 characters</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="email" class="form-label">Email Address</label>
+          <input
+            type="email"
+            id="email"
+            formControlName="email"
+            class="form-input"
+            placeholder="Enter your email"
+            [class.error]="email?.invalid && email?.touched"
+          />
+          <div *ngIf="email?.invalid && email?.touched" class="error-message">
+            <span *ngIf="email?.errors?.['required']">Email is required</span>
+            <span *ngIf="email?.errors?.['email']">Please enter a valid email</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="department" class="form-label">Department</label>
+          <select
+            id="department"
+            formControlName="department"
+            class="form-select"
+            [class.error]="department?.invalid && department?.touched"
+          >
+            <option value="">Select your department</option>
+            <option *ngFor="let dept of departments" [value]="dept">{{ dept }}</option>
+          </select>
+          <div *ngIf="department?.invalid && department?.touched" class="error-message">
+            <span *ngIf="department?.errors?.['required']">Department is required</span>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="password" class="form-label">Password</label>
+            <input
+              type="password"
+              id="password"
+              formControlName="password"
+              class="form-input"
+              placeholder="Create a password"
+              [class.error]="password?.invalid && password?.touched"
+            />
+            <div *ngIf="password?.invalid && password?.touched" class="error-message">
+              <span *ngIf="password?.errors?.['required']">Password is required</span>
+              <span *ngIf="password?.errors?.['minlength']">Password must be at least 6 characters</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="confirmPassword" class="form-label">Confirm Password</label>
+            <input
+              type="password"
+              id="confirmPassword"
+              formControlName="confirmPassword"
+              class="form-input"
+              placeholder="Confirm your password"
+              [class.error]="confirmPassword?.invalid && confirmPassword?.touched"
+            />
+            <div *ngIf="confirmPassword?.invalid && confirmPassword?.touched" class="error-message">
+              <span *ngIf="confirmPassword?.errors?.['required']">Password confirmation is required</span>
+              <span *ngIf="confirmPassword?.errors?.['passwordMismatch']">Passwords do not match</span>
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="errorMessage" class="error-message global-error">
+          {{ errorMessage }}
+        </div>
+
+        <div *ngIf="successMessage" class="success-message global-success">
+          {{ successMessage }}
+        </div>
+
+        <button
+          type="submit"
+          [disabled]="loading || registerForm.invalid"
+          class="btn btn-primary auth-submit"
+        >
+          <span *ngIf="loading" class="loading"></span>
+          <span *ngIf="!loading">Create Account</span>
+          <span *ngIf="loading">Creating Account...</span>
+        </button>
+      </form>
+
+      <div class="auth-footer">
+        <p>Already have an account? <a routerLink="/login" class="auth-link">Sign in here</a></p>
+      </div>
+    </div>
+  </div>
+</div>
